@@ -14,12 +14,12 @@ namespace GLaDOSV3.Module.ServerBackup.Models
     {
         internal class UserC
         {
-            public ulong UserID { get; set; }
+            public ulong UserId { get; set; }
             public string Nickname { get; set; }
             public UserC(IGuildUser u)
             {
                 if (u == null) return;
-                UserID = u.Id;
+                UserId = u.Id;
                 Nickname = u.Nickname;
             }
         }
@@ -41,8 +41,8 @@ namespace GLaDOSV3.Module.ServerBackup.Models
         public ExplicitContentFilterLevel ContentFilter { get; set; }
         public SystemChannelMessageDeny SystemChannelFlags { get; set; }
         public int SystemChannelLocalId { get; set; }
-        public int AFKTimeout { get; set; }
-        public int AFKChannelLocalId { get; set; }
+        public int AfkTimeout { get; set; }
+        public int AfkChannelLocalId { get; set; }
         public BackupGuild() => this.SaveGuild(null).GetAwaiter();
         public BackupGuild(SocketCommandContext ctx) => this.SaveGuild(ctx).GetAwaiter().GetResult();
         public static Task<List<BackupChatMessage>> GenChannelHiddenMessage() => Task.FromResult(
@@ -213,7 +213,7 @@ namespace GLaDOSV3.Module.ServerBackup.Models
             Categories = ctx.Guild.CategoryChannels.OrderBy(c => c.Id).Select(c => new BackupCategory(c, ref channelId)).ToList();
             TextChannels = ctx.Guild.TextChannels.Where(c => c.Category == null).OrderBy(c => c.Id).Select(c => new BackupTextChannel(c, ref channelId)).ToList();
             VoiceChannels = ctx.Guild.VoiceChannels.Where(c => c.Category == null).OrderBy(c => c.Id).Select(c => new BackupAudioChannel(c, ref channelId)).ToList();
-            AFKChannelLocalId = await DiscordChannelToLocalIdAsync(ctx.Guild, ctx.Guild.AFKChannel);
+            AfkChannelLocalId = await DiscordChannelToLocalIdAsync(ctx.Guild, ctx.Guild.AFKChannel);
             SystemChannelLocalId = await DiscordChannelToLocalIdAsync(ctx.Guild, ctx.Guild.SystemChannel);
             Roles = ctx.Guild.Roles.Where(r => !r.IsEveryone && !r.IsManaged).OrderBy(c => c.Position).Select(r => new BackupRole(r)).ToList();
             Bans = ctx.Guild.GetUser(ctx.Client.CurrentUser.Id).GuildPermissions.Has(GuildPermission.BanMembers) ? (await ctx.Guild.GetBansAsync()).Select(b => new BackupBan(b)).ToList() : new List<BackupBan>(0);
@@ -222,7 +222,7 @@ namespace GLaDOSV3.Module.ServerBackup.Models
             VoiceRegion = ctx.Guild.VoiceRegionId;
             DefaultNotifications = ctx.Guild.DefaultMessageNotifications;
             ContentFilter = ctx.Guild.ExplicitContentFilter;
-            AFKTimeout = ctx.Guild.AFKTimeout;
+            AfkTimeout = ctx.Guild.AFKTimeout;
             SystemChannelFlags = ctx.Guild.SystemChannelFlags;
             using var wc = new WebClient();
             Emojis = ctx.Guild.Emotes.OrderBy(c => c.Name).Select(e => new BackupEmoji(e)).ToList();

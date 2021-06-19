@@ -8,7 +8,7 @@ namespace GLaDOSV3.Module.ServerBackup.Models
 {
     internal class BackupTextChannel : BackupChannel
     {
-        public bool IsNSFW { get; set; }
+        public bool IsNsfw { get; set; }
         public string Category { get; set; }
         public string Topic { get; set; }
         public List<BackupChatMessage> LastMessages { get; set; }
@@ -16,7 +16,7 @@ namespace GLaDOSV3.Module.ServerBackup.Models
         public BackupTextChannel(SocketTextChannel c, ref int channelId) : base(c, ref channelId)
         {
             if (c == null) return;
-            IsNSFW = c.IsNsfw;
+            IsNsfw = c.IsNsfw;
             Category = c.Category?.Name;
             Topic = BackupGuild.FixId(c.Guild, c.Topic).GetAwaiter().GetResult();
             LastMessages = this.GetMessages(c, 250).GetAwaiter().GetResult();
