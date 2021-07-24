@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace GLaDOSV3.Module.ServerBackup
 {
-    public class BackupModule : ModuleBase<SocketCommandContext>
+    public class BackupModule : ModuleBase<ShardedCommandContext>
     {
         private class OrderedPropertiesContractResolver : DefaultContractResolver
         {

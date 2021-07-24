@@ -44,7 +44,7 @@ namespace GLaDOSV3.Module.ServerBackup.Models
         public int AfkTimeout { get; set; }
         public int AfkChannelLocalId { get; set; }
         public BackupGuild() => this.SaveGuild(null).GetAwaiter();
-        public BackupGuild(SocketCommandContext ctx) => this.SaveGuild(ctx).GetAwaiter().GetResult();
+        public BackupGuild(ShardedCommandContext ctx) => this.SaveGuild(ctx).GetAwaiter().GetResult();
         public static Task<List<BackupChatMessage>> GenChannelHiddenMessage() => Task.FromResult(
             new List<BackupChatMessage>(1) { new BackupChatMessage(null)
             {
@@ -204,7 +204,7 @@ namespace GLaDOSV3.Module.ServerBackup.Models
             });
             return s;
         }
-        private async Task SaveGuild(SocketCommandContext ctx)
+        private async Task SaveGuild(ShardedCommandContext ctx)
         {
             if (ctx == null) return;
             ServerName = ctx.Guild.Name;
