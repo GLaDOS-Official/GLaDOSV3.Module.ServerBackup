@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -224,10 +225,10 @@ namespace GLaDOSV3.Module.ServerBackup.Models
             ContentFilter = ctx.Guild.ExplicitContentFilter;
             AfkTimeout = ctx.Guild.AFKTimeout;
             SystemChannelFlags = ctx.Guild.SystemChannelFlags;
-            using var wc = new WebClient();
+            using var wc = new HttpClient();
             Emojis = ctx.Guild.Emotes.OrderBy(c => c.Name).Select(e => new BackupEmoji(e)).ToList();
-            SplashImage = string.IsNullOrWhiteSpace(ctx.Guild.SplashUrl) ? Array.Empty<byte>() : wc.DownloadData(ctx.Guild.SplashUrl);
-            Icon = string.IsNullOrWhiteSpace(ctx.Guild.IconUrl) ? Array.Empty<byte>() : wc.DownloadData(ctx.Guild.IconUrl);
+            SplashImage = string.IsNullOrWhiteSpace(ctx.Guild.SplashUrl) ? Array.Empty<byte>() : (await wc.GetByteArrayAsync(ctx.Guild.SplashUrl));
+            Icon = string.IsNullOrWhiteSpace(ctx.Guild.IconUrl) ? Array.Empty<byte>() : (await wc.GetByteArrayAsync(ctx.Guild.IconUrl));
         }
     }
 }

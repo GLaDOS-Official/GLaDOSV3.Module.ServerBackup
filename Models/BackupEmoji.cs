@@ -1,5 +1,6 @@
 ﻿using Discord;
 using System.Net;
+using System.Net.Http;
 
 namespace GLaDOSV3.Module.ServerBackup.Models
 {
@@ -11,8 +12,9 @@ namespace GLaDOSV3.Module.ServerBackup.Models
         {
             if (e == null) return;
             Name = e.Name;
-            using var wc = new WebClient();
-            Image = wc.DownloadData(e.Url);
+            
+            using var wc = new HttpClient();
+            Image = wc.GetByteArrayAsync(e.Url).GetAwaiter().GetResult();
         }
     }
 }
