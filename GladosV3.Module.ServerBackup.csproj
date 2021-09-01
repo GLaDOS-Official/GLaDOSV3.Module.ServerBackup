@@ -21,4 +21,7 @@
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="..\GLaDOSV3\$(OutDir)\Modules\"></Copy>
   </Target>
+  <Target Condition="'$(Configuration)'=='DEBUG'" Name="DebugPostBuild" AfterTargets="PostBuildEvent">
+    <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="..\GLaDOSV3\$(OutDir)\Modules"></Copy>
+  </Target>
 </Project>
