@@ -1,5 +1,4 @@
 ﻿using Discord;
-using System.Net;
 using System.Net.Http;
 
 namespace GLaDOSV3.Module.ServerBackup.Models
