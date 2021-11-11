@@ -11,8 +11,8 @@ namespace GLaDOSV3.Module.ServerBackup.Models
         {
             if (e == null) return;
             Name = e.Name;
-            
-            using var wc = new HttpClient();
+
+            using HttpClient wc = new HttpClient();
             Image = wc.GetByteArrayAsync(e.Url).GetAwaiter().GetResult();
         }
     }

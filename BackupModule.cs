@@ -1,9 +1,10 @@
-﻿using Discord;
+using Discord;
 using Discord.Commands;
 using Discord.Rest;
 using Discord.Webhook;
 using Discord.WebSocket;
 using GLaDOSV3.Module.ServerBackup.Models;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -17,11 +18,14 @@ namespace GLaDOSV3.Module.ServerBackup
 {
     public class BackupModule : ModuleBase<ShardedCommandContext>
     {
+        private readonly ILogger<BackupModule> _logger;
+        public BackupModule(ILogger<BackupModule> logger) => this._logger = logger;
+
         private class OrderedPropertiesContractResolver : DefaultContractResolver
         {
             protected override IList<JsonProperty> CreateProperties(System.Type type, MemberSerialization memberSerialization)
             {
-                var props = base.CreateProperties(type, memberSerialization);
+                IList<JsonProperty> props = base.CreateProperties(type, memberSerialization);
                 return props.OrderBy(p => p.PropertyName).ToList();
             }
         }
@@ -140,13 +144,22 @@ namespace GLaDOSV3.Module.ServerBackup
         }
         private async Task SendMessagesToChannelAsync(Dictionary<ulong, List<BackupChatMessage>> backupMessages, SocketTextChannel o)
         {
-            var webhook = await o.CreateWebhookAsync("Message restorer");
-            var wc = new DiscordWebhookClient(webhook);
-            wc.Log += Services.LoggingService.OnLogAsync;
-            if (!backupMessages.TryGetValue(o.Id, out var messages)) return;
-            foreach (var message in messages)
+            RestWebhook webhook = await o.CreateWebhookAsync("Message restorer");
+            DiscordWebhookClient wc = new DiscordWebhookClient(webhook);
+            wc.Log += delegate (LogMessage message)
             {
-                var embeds = (from embed in message.Embeds let fields = embed.Fields.Select(f => new EmbedFieldBuilder().WithName(f.Name).WithValue(f.Value).WithIsInline(f.Inline)).ToList() let embedBuilder = new EmbedBuilder { /* Embed property can be set within object initializer*/ Title = embed.Title, Description = (BackupGuild.FixId(Context.Guild, embed.Description, true).GetAwaiter().GetResult()), Author = (embed.Author == null && embed.AuthorIcon == null && embed.AuthorUrl == null) ? null : new EmbedAuthorBuilder().WithName(embed.Author).WithIconUrl(embed.AuthorIcon).WithUrl(embed.AuthorUrl), Color = embed.Color, Fields = fields, Footer = (embed.FooterText == null && embed.FooterIconUrl == null) ? null : new EmbedFooterBuilder().WithText(embed.FooterText).WithIconUrl(embed.FooterIconUrl), ImageUrl = embed.Image, ThumbnailUrl = embed.Thumbnail, Timestamp = embed.Timestamp, Url = embed.Url } let m = embedBuilder.Build() select embedBuilder.Build()).ToList();
+                LogLevel logLevel = (LogLevel)Math.Abs((int)message.Severity - 5);
+                if (message.Exception == null)
+                    this._logger.Log(logLevel, message.Message);
+                else
+                    this._logger.Log(logLevel, message.Exception, message.Message);
+                return Task.CompletedTask;
+            };
+
+            if (!backupMessages.TryGetValue(o.Id, out List<BackupChatMessage> messages)) return;
+            foreach (BackupChatMessage message in messages)
+            {
+                List<Embed> embeds = (from embed in message.Embeds let fields = embed.Fields.Select(f => new EmbedFieldBuilder().WithName(f.Name).WithValue(f.Value).WithIsInline(f.Inline)).ToList() let embedBuilder = new EmbedBuilder { /* Embed property can be set within object initializer*/ Title = embed.Title, Description = (BackupGuild.FixId(Context.Guild, embed.Description, true).GetAwaiter().GetResult()), Author = (embed.Author == null && embed.AuthorIcon == null && embed.AuthorUrl == null) ? null : new EmbedAuthorBuilder().WithName(embed.Author).WithIconUrl(embed.AuthorIcon).WithUrl(embed.AuthorUrl), Color = embed.Color, Fields = fields, Footer = (embed.FooterText == null && embed.FooterIconUrl == null) ? null : new EmbedFooterBuilder().WithText(embed.FooterText).WithIconUrl(embed.FooterIconUrl), ImageUrl = embed.Image, ThumbnailUrl = embed.Thumbnail, Timestamp = embed.Timestamp, Url = embed.Url } let m = embedBuilder.Build() select embedBuilder.Build()).ToList();
                 SocketUser user = Context.Client.GetUser(message.AuthorId);
             retry:
                 try
@@ -158,7 +171,7 @@ namespace GLaDOSV3.Module.ServerBackup
                         msgId = await wc.SendMessageAsync(string.IsNullOrWhiteSpace(message.Text) ? null : (await BackupGuild.FixId(Context.Guild, message.Text, true)), false, embeds, user == null ? message.Author : user.Username, user == null ? message.AuthorPic : (user.GetAvatarUrl() ?? user.GetDefaultAvatarUrl()));
                     if (!message.IsPinned) continue;
                     await ((RestUserMessage)await o.GetMessageAsync(msgId)).PinAsync();
-                    var oof = (await o.GetMessagesAsync(1).FlattenAsync()).First();
+                    IMessage oof = (await o.GetMessagesAsync(1).FlattenAsync()).First();
                     if (oof.Type == MessageType.ChannelPinnedMessage) await oof.DeleteAsync().ConfigureAwait(false);
                 }
                 catch (Exception) { await Task.Delay(8500); goto retry; }
